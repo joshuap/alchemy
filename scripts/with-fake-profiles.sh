@@ -39,6 +39,7 @@ export GITHUB_ENTERPRISE_TOKEN="$GITHUB_ACCESS_TOKEN"
 
 export HCLOUD_TOKEN=alchemy-fake-local-hetzner-token
 export DAYTONA_API_KEY=alchemy-fake-local-daytona-key
+export HONEYBADGER_API_TOKEN=alchemy-fake-local-honeybadger-token
 export MODAL_TOKEN_ID=ak-alchemy-fake-local
 export MODAL_TOKEN_SECRET=as-alchemy-fake-local
 export INFISICAL_TOKEN=alchemy-fake-local-infisical-token

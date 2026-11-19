@@ -1,0 +1,82 @@
+---
+title: Deploys and source maps
+description: Upload a build's source maps before it goes live and record the deploy once it has, so Honeybadger shows original source in backtraces and marks which errors started with a release.
+---
+
+import Timeline from "../../../components/diagrams/Timeline.astro";
+
+A **source map** connects minified JavaScript back to the source it was built from. With a build's maps uploaded, Honeybadger shows your original file names and lines in a backtrace instead of one long minified line. A **deploy** marks the moment a revision went live, so Honeybadger can show which errors started with it, and resolve the old ones if the project asks it to. Both are sent with the project's API key, for one **revision**: the commit or tag being released.
+
+The order matters. Upload the maps before the new code can raise an error, and record the deploy once the code is live:
+
+<Timeline
+  end={10}
+  lanes={[
+    { id: "maps", label: "SourceMaps" },
+    { id: "worker", label: "Worker" },
+    { id: "deploy", label: "Deploy" },
+  ]}
+  bars={[
+    { lane: "maps", start: 0, end: 3, label: "upload", tone: "accent" },
+    { lane: "worker", start: 3, end: 7, label: "goes live" },
+    { lane: "deploy", start: 7, end: 9, label: "record", tone: "accent" },
+  ]}
+  ticks={[
+    { at: 0, label: "alchemy deploy" },
+  ]}
+  caption="One deploy of revision a1b2c3d. The maps are in before the Worker serves the new code, and the deploy is recorded once it does."
+/>
+
+## Upload a build's source maps
+
+```typescript title="alchemy.run.ts"
+const revision = yield* Config.String("GITHUB_SHA").pipe(Config.withDefault("dev"));
+
+const maps = yield* Honeybadger.SourceMaps("Web", {
+  apiKey: key.key,
+  revision,
+  jsDirectory: "./dist/assets",
+  mapDirectory: "./dist/assets",
+  baseUrl: "https://my-app.example.com/assets/",
+});
+```
+
+Every `.js.map` under `mapDirectory` is uploaded with the `.js` at the same path under `jsDirectory`. `baseUrl` is where `jsDirectory` is served from, so `dist/assets/index-4f2a.js` is matched to `https://my-app.example.com/assets/index-4f2a.js`. A relative directory is read from where you run `alchemy deploy`.
+
+The maps are uploaded again when the revision, the API key, or any file changes, and not otherwise. Honeybadger keeps the maps it was sent, so removing the resource deletes nothing. Each file can be at most 80 MB.
+
+## Upload before the code goes live
+
+Make the Worker depend on the upload by passing it one of its outputs. The revision is a natural one, since your Honeybadger client reports it too:
+
+```typescript title="alchemy.run.ts"
+const api = yield* Cloudflare.Worker("Api", {
+  main: "./src/worker.ts",
+  env: {
+    HONEYBADGER_API_KEY: key.key,
+    HONEYBADGER_REVISION: maps.revision,
+  },
+});
+```
+
+## Record the deploy
+
+```typescript title="alchemy.run.ts"
+yield* Honeybadger.Deploy("Production", {
+  apiKey: key.key,
+  environment: "production",
+  revision,
+  repository: "https://github.com/acme/my-app",
+  after: api.url,
+});
+```
+
+`after` takes any output of what must be live first, here the Worker's URL, and only orders the record after it. `repository` links the deploy to your code.
+
+A new deploy is recorded when the revision, the environment or the API key changes. Changing only `repository` or `localUsername` records nothing. Honeybadger keeps its deploy history, so removing the resource deletes nothing.
+
+Honeybadger doesn't de-duplicate deploys. If `alchemy deploy` is interrupted after the record is made but before Alchemy saves it, the next run records the same revision again.
+
+## EU accounts
+
+Deploys and source maps go to Honeybadger's ingest host, not the API: `https://api.honeybadger.io` in the US and `https://eu-api.honeybadger.io` in the EU. Alchemy picks the one for your account's region from the API base URL in your profile, so an EU account needs nothing more. See [EU accounts](/honeybadger/accounts-tokens-and-regions#eu-accounts).

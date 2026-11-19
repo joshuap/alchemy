@@ -1,0 +1,85 @@
+---
+title: Accounts, tokens and regions
+description: How a Honeybadger account holds your projects, which API token Alchemy deploys with, how each app reports with its project's own key, and how to deploy to an EU account.
+---
+
+import PackageManagers from "../../../components/PackageManagers.astro";
+import Tree from "../../../components/diagrams/Tree.astro";
+
+Everything on Honeybadger belongs to an **account**: projects, their errors, events, uptime checks and dashboards, your team, and your bill. Two kinds of credential reach it. An **API token** calls Honeybadger's API, and is what Alchemy deploys with. A project's **API key**, also called an ingestion key, can only report to that project: errors, events, deploys and source maps. It can't call the API.
+
+<Tree
+  nodes={[
+    {
+      id: "account", label: "acme", type: "account", icon: "brand:honeybadger",
+    },
+    { id: "app", label: "my-app", type: "project", parent: "account", tone: "accent", icon: "folder" },
+    { id: "key", label: "worker", type: "ingestion key", parent: "app", icon: "key-round" },
+    { id: "staging", label: "my-app-staging", type: "project", parent: "account", icon: "folder" },
+  ]}
+  scopes={[
+    { on: "account", label: "API token: the scopes you grant" },
+    { on: "app", label: "API key: report here" },
+  ]}
+  caption="The API token in your profile deploys the projects, keys, uptime checks and dashboards its scopes allow. The API key your app ships with can only report to its own project."
+/>
+
+## API tokens
+
+Honeybadger has three kinds of API token, and Alchemy deploys with either of the first two:
+
+| Token | Prefix | Acts as | Use it for |
+| --- | --- | --- | --- |
+| User API token | `hbu_` | you, in the projects you can reach | deploying from your machine |
+| Account API token | `hba_` | the account | CI, and deploys that shouldn't depend on one person's access |
+| OAuth access token | `hbo_` | you, through an app such as the Honeybadger MCP server | not used by Alchemy |
+
+Create a user API token in User settings, or an account API token in Account settings. Each token carries **scopes**, such as `projects:create` or `faults:read`, and Honeybadger checks every call against them. Give the token the scopes for the resources your Stack manages. A token can also be limited to some projects and given an expiry date.
+
+See [Authentication](https://docs.honeybadger.io/api/v3/authentication/) in Honeybadger's docs for every scope.
+
+## Deploy with a profile
+
+Add the token to your [profile](/environments/profiles):
+
+<PackageManagers run="alchemy profile edit --add Honeybadger" />
+
+See [Setup](/honeybadger/setup).
+
+## One profile per account
+
+The stage decides what is deployed, and the profile decides which token deploys it. When production lives in its own Honeybadger account, give it its own profile:
+
+<PackageManagers script={`{run} alchemy profile create prod
+{run} alchemy profile edit --profile prod --add Honeybadger
+{run} alchemy deploy --stage prod --profile prod`} />
+
+## API keys for your apps
+
+Your app needs only to report, and only to its own project. Declare its key in your Stack and pass the value to the app as a secret:
+
+```typescript title="alchemy.run.ts"
+const key = yield* Honeybadger.IngestionKey("Worker", {
+  projectId: project.projectId,
+  label: "worker",
+});
+
+yield* Cloudflare.Worker("Api", {
+  main: "./src/worker.ts",
+  env: { HONEYBADGER_API_KEY: key.key },
+});
+```
+
+`key.key` is `Redacted`, so it deploys as a secret. See [Projects and ingestion keys](/honeybadger/projects-and-ingestion-keys).
+
+## EU accounts
+
+Honeybadger runs separately in the US and the EU. An account lives in one region, and its API has its own address there: `https://app.honeybadger.io/v3` in the US and `https://eu-app.honeybadger.io/v3` in the EU.
+
+US is the default. For an EU account, enter `https://eu-app.honeybadger.io/v3` as the API base URL when you add the token to your profile. In CI, set `HONEYBADGER_API_URL` to the same address.
+
+Deploys and source maps go to a separate ingest host, `https://eu-api.honeybadger.io` in the EU. Alchemy derives it from the API base URL, so you set only the one address. To send them somewhere else, such as a local test server, set the ingest URL in your profile. With environment credentials, set `HONEYBADGER_INGEST_URL` next to `HONEYBADGER_API_TOKEN`.
+
+## In CI
+
+With `CI=true`, Alchemy skips the profile and reads `HONEYBADGER_API_TOKEN` from the environment, plus `HONEYBADGER_API_URL` for an EU account. The URL variables only take effect alongside the token; with a profile, set the URLs in the profile instead. Use an account API token, so the pipeline keeps working when someone leaves the team. See [CI](/environments/ci).

@@ -11175,6 +11175,28 @@ importers:
         specifier: 'catalog:'
         version: 7.1.0-beta
 
+  packages/honeybadger:
+    dependencies:
+      '@distilled.cloud/core':
+        specifier: workspace:*
+        version: link:../../submodules/distilled/packages/core
+      '@distilled.cloud/honeybadger':
+        specifier: workspace:*
+        version: link:../../submodules/distilled/packages/honeybadger
+    devDependencies:
+      '@types/bun':
+        specifier: 'catalog:'
+        version: 1.4.3
+      alchemy:
+        specifier: workspace:*
+        version: link:../alchemy
+      effect:
+        specifier: 4.1.4
+        version: 4.1.4
+      typescript:
+        specifier: 'catalog:'
+        version: 7.1.0-beta
+
   packages/infisical:
     dependencies:
       '@distilled.cloud/infisical':
@@ -11268,6 +11290,9 @@ importers:
       '@alchemy.run/hetzner':
         specifier: workspace:*
         version: link:../hetzner
+      '@alchemy.run/honeybadger':
+        specifier: workspace:*
+        version: link:../honeybadger
       '@alchemy.run/kubernetes':
         specifier: workspace:*
         version: link:../kubernetes
@@ -11364,6 +11389,9 @@ importers:
       '@distilled.cloud/hetzner':
         specifier: workspace:*
         version: link:../../submodules/distilled/packages/hetzner
+      '@distilled.cloud/honeybadger':
+        specifier: workspace:*
+        version: link:../../submodules/distilled/packages/honeybadger
       '@distilled.cloud/iceberg':
         specifier: workspace:*
         version: link:../../submodules/distilled/packages/iceberg
@@ -13053,6 +13081,22 @@ importers:
         version: 26.6.5
 
   submodules/distilled/packages/hetzner:
+    dependencies:
+      '@distilled.cloud/core':
+        specifier: workspace:*
+        version: link:../core
+      effect:
+        specifier: 4.1.4
+        version: 4.1.4
+    devDependencies:
+      '@distilled.cloud/dev':
+        specifier: workspace:*
+        version: link:../dev
+      '@types/node':
+        specifier: 'catalog:'
+        version: 26.6.5
+
+  submodules/distilled/packages/honeybadger:
     dependencies:
       '@distilled.cloud/core':
         specifier: workspace:*

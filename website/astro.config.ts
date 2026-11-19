@@ -55,6 +55,7 @@ function providersSidebarEntry() {
       { label: "Prisma", link: "/prisma" },
       { label: "Better Auth", link: "/better-auth" },
       { label: "Axiom", link: "/axiom" },
+      { label: "Honeybadger", link: "/honeybadger" },
       { label: "GitHub", link: "/github" },
       { label: "Stripe", link: "/stripe" },
       { label: "Docker", link: "/docker" },
@@ -2140,6 +2141,47 @@ export default defineConfig({
               ],
             },
             providerResourcesEntry("Axiom"),
+          ],
+        },
+        {
+          label: "Honeybadger",
+          items: [
+            { label: "Overview", link: "/honeybadger" },
+            { label: "What is Honeybadger?", link: "/honeybadger/what-is-honeybadger" },
+            { label: "Setup", link: "/honeybadger/setup" },
+            {
+              label: "Accounts & access",
+              items: [
+                {
+                  label: "Accounts, tokens and regions",
+                  link: "/honeybadger/accounts-tokens-and-regions",
+                },
+              ],
+            },
+            {
+              label: "Error tracking",
+              items: [
+                {
+                  label: "Projects and ingestion keys",
+                  link: "/honeybadger/projects-and-ingestion-keys",
+                },
+              ],
+            },
+            {
+              label: "Uptime",
+              items: [{ label: "Uptime checks", link: "/honeybadger/uptime-checks" }],
+            },
+            {
+              label: "Logs & events",
+              items: [{ label: "Dashboards", link: "/honeybadger/dashboards" }],
+            },
+            {
+              label: "Releases",
+              items: [
+                { label: "Deploys and source maps", link: "/honeybadger/deploys-and-source-maps" },
+              ],
+            },
+            providerResourcesEntry("Honeybadger"),
           ],
         },
         {

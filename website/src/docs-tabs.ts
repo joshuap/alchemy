@@ -105,6 +105,9 @@ export const DOCS_TABS: DocsTab[] = [
   ]),
   hub("Stripe", "stripe", "Payments", "products · prices · webhooks", ["/providers/stripe"]),
   hub("Axiom", "axiom", "Observability", "logs · traces · alerts", ["/providers/axiom"]),
+  hub("Honeybadger", "honeybadger", "Observability", "errors · uptime · dashboards", [
+    "/providers/honeybadger",
+  ]),
   hub("GitHub", "github", "Source & CI", "repos · secrets · events", ["/providers/github"]),
   hub("ACME", "acme", "Certificates", "accounts · DNS-01 · certificate issuance", [
     "/providers/acme",

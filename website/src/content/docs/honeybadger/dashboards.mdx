@@ -1,0 +1,81 @@
+---
+title: Dashboards
+description: Declare Honeybadger dashboards as code — query charts and widgets for errors, uptime, check-ins, deploys and alarms, laid out on a grid, with every stage getting the same dashboard.
+---
+
+import Tree from "../../../components/diagrams/Tree.astro";
+
+A **dashboard** belongs to a project and is a grid of widgets. A query chart (`insights_vis`) runs a BadgerQL query over the project's events and draws the result. The other widgets show what the project already tracks: its errors, uptime checks, check-ins, deploys or alarms. In your Stack, the whole dashboard is one resource, so a chart change is a reviewed diff and every stage gets the same dashboard.
+
+<Tree
+  nodes={[
+    {
+      id: "project", label: "my-app", type: "project", icon: "folder",
+      areas: ["dash dash", "stream deploys"],
+      phoneAreas: ["dash dash", "stream deploys"],
+    },
+    {
+      id: "dash", label: "My app", type: "dashboard", parent: "project", tone: "accent", icon: "layout-dashboard",
+      areas: ["events wdeploys"],
+      phoneAreas: ["events wdeploys"],
+    },
+    { id: "events", label: "events", type: "insights_vis", parent: "dash", specs: [["grid", "x 0 · w 6"]] },
+    { id: "wdeploys", label: "deploys", type: "deployments", parent: "dash", specs: [["grid", "x 6 · w 6"]] },
+    { id: "stream", label: "default", type: "event stream", parent: "project", icon: "database" },
+    { id: "deploys", label: "deploys", type: "deploy history", parent: "project", icon: "rocket" },
+  ]}
+  links={[
+    { from: "events", to: "stream", label: "queries" },
+    { from: "wdeploys", to: "deploys", label: "shows" },
+  ]}
+  caption="Two widgets side by side on the dashboard's 12-column grid. The query chart runs BadgerQL over the project's default event stream, and the deploys widget shows the project's deploy history."
+/>
+
+## Declare a dashboard
+
+```typescript title="alchemy.run.ts"
+yield* Honeybadger.Dashboard("Overview", {
+  projectId: project.projectId,
+  title: "My app",
+  defaultTs: "P1D",
+  widgets: [
+    {
+      id: "events",
+      type: "insights_vis",
+      grid: { x: 0, y: 0, w: 6, h: 4 },
+      presentation: { title: "Events" },
+      config: {
+        query: "stats count() by bin(1h)",
+        streams: ["default"],
+        vis: { view: "line", chart_config: { xField: "bin(1h)", yField: "count()" } },
+      },
+    },
+    {
+      id: "deploys",
+      type: "deployments",
+      grid: { x: 6, y: 0, w: 6, h: 4 },
+      presentation: { title: "Deploys" },
+    },
+  ],
+});
+```
+
+Each widget needs an `id`, unique in the dashboard, which keeps it the same widget across deploys. `grid` places it: `x` and `w` count columns of 12, and `y` and `h` count rows. A widget without a `grid` takes the full width.
+
+`defaultTs` is the time range the dashboard opens with: an ISO 8601 duration such as `P7D` or `PT3H`, a keyword (`today`, `yesterday`, `week`, `month`), or a range such as `2026-01-01/2026-01-31`. Honeybadger refuses shorthand like `7d`.
+
+## Query charts
+
+A query chart's `config` holds the BadgerQL `query`, the event `streams` it reads, and how to draw the result (`vis`). Write the query in Honeybadger first, and check it returns what you expect before you put it on a dashboard.
+
+Honeybadger drops a stream the project doesn't have yet, which happens when you create a project and its dashboard in one deploy, before the app has sent any events. Your next deploy notices the missing stream and writes the dashboard again.
+
+## Edits in the UI
+
+Every update writes the whole dashboard: its title, time range and widgets. A widget you add or move in Honeybadger's UI is replaced the next time a deploy changes the dashboard. Make lasting changes in your Stack.
+
+Changing the title renames the dashboard in place. Moving it to another project replaces it.
+
+## Use a dashboard you already have
+
+Dashboards have no tags. Deploying a dashboard with the same title as one that already exists in the project fails with `OwnedBySomeoneElse` until you deploy once with `--adopt`. See [Adoption](/infrastructure-as-code/resource-lifecycle#adoption).

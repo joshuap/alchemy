@@ -1,0 +1,1 @@
+{"version":3,"file":"app.js","sources":["../src/app.ts"],"sourcesContent":["export function add(a: number, b: number) {\n  return a + b;\n}\nconsole.log(add(1, 2));\n"],"names":["add","a","b","console","log"],"mappings":"AAAO,SAASA,IAAIC,EAAWC,GAC7B,OAAOD,EAAIC,CACb,CACAC,QAAQC,IAAIJ,IAAI,EAAG"}

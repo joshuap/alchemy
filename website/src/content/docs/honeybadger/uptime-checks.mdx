@@ -1,0 +1,113 @@
+---
+title: Uptime checks
+description: Have Honeybadger request your app's URLs on a schedule from locations around the world, decide from each response whether it's up, and alert the project when it goes down.
+---
+
+import Timeline from "../../../components/diagrams/Timeline.astro";
+
+An **uptime check** (a Site, in Honeybadger's API) watches your app from outside. Honeybadger requests a URL on a schedule from several locations around the world, and decides from each response whether the site is up. When it goes down, Honeybadger alerts the project, and again when it comes back.
+
+## Check a health endpoint
+
+```typescript title="alchemy.run.ts"
+yield* Honeybadger.Site("Health", {
+  projectId: project.projectId,
+  name: "my-app health",
+  url: Output.interpolate`${api.url}/health`,
+  matchType: "success",
+});
+```
+
+`name` is how the check shows in Honeybadger and on status pages. `url` can be any address with an `http://` or `https://` scheme, including an output of the Worker it watches.
+
+## Decide what counts as up
+
+`matchType` says how a check reads the response, and `match` is what it compares against:
+
+| `matchType` | The site is up when |
+| --- | --- |
+| `success` | the status is any 2xx |
+| `exact` | the status equals `match`, such as `"204"` |
+| `include` | the body contains `match` |
+| `exclude` | the body doesn't contain `match` |
+| `jmespath` | the JMESPath expression in `match` is true of the JSON body |
+
+A JSON health endpoint can report more than its status code. This check passes only while the body says `ok` is `true`:
+
+```typescript title="alchemy.run.ts"
+yield* Honeybadger.Site("Health", {
+  projectId: project.projectId,
+  name: "my-app health",
+  url: "https://my-app.example.com/health",
+  matchType: "jmespath",
+  match: "ok == `true`",
+});
+```
+
+Numbers and booleans in a JMESPath expression go in backticks.
+
+## Choose how often and from where
+
+Each location requests the URL every `frequency` minutes: 1, 2, 5 or 15. One failed request isn't an outage. Each location counts its own failures, and Honeybadger declares an outage once a location has failed `outageThreshold` checks in a row. Leave `outageThreshold` out and the site is down once half of its locations are failing. The next passing check ends an outage:
+
+<Timeline
+  end={30}
+  lanes={[
+    { id: "va", label: "Virginia" },
+    { id: "fra", label: "Frankfurt" },
+  ]}
+  bars={[
+    { lane: "va", start: 0, end: 1, tone: "accent" },
+    { lane: "va", start: 5, end: 6, tone: "accent" },
+    { lane: "va", start: 10, end: 11, tone: "danger" },
+    { lane: "va", start: 15, end: 16, tone: "danger" },
+    { lane: "va", start: 20, end: 21, tone: "accent" },
+    { lane: "va", start: 25, end: 26, tone: "accent" },
+    { lane: "fra", start: 0, end: 1, tone: "accent" },
+    { lane: "fra", start: 5, end: 6, tone: "accent" },
+    { lane: "fra", start: 10, end: 11, tone: "danger" },
+    { lane: "fra", start: 15, end: 16, tone: "danger" },
+    { lane: "fra", start: 20, end: 21, tone: "accent" },
+    { lane: "fra", start: 25, end: 26, tone: "accent" },
+  ]}
+  marks={[
+    { at: 16, label: "down: alert" },
+    { at: 21, label: "up: recovered" },
+  ]}
+  ticks={[
+    { at: 0, label: "0m" },
+    { at: 10, label: "10m" },
+    { at: 20, label: "20m" },
+    { at: 30, label: "30m" },
+  ]}
+  legend={[
+    { tone: "accent", label: "check passes" },
+    { tone: "danger", label: "check fails" },
+  ]}
+  caption="Checking every 5 minutes from two locations with outageThreshold: 2. Each location counts its own failures, so its second failure in a row declares an outage and alerts the project. The next passing check ends it."
+/>
+
+```typescript title="alchemy.run.ts"
+yield* Honeybadger.Site("Home", {
+  projectId: project.projectId,
+  name: "my-app home",
+  url: "https://my-app.example.com/",
+  matchType: "include",
+  match: "Welcome",
+  frequency: 5,
+  locations: ["Virginia", "Frankfurt"],
+  outageThreshold: 2,
+});
+```
+
+The locations are Virginia, Oregon, London, Frankfurt and Singapore. Leave out `locations` to check from all of them.
+
+## Other settings
+
+`requestMethod` is the HTTP method each check sends (`GET` by default), `timeout` is how many seconds a request may take (30 by default), and `validateSsl` fails the check when the TLS certificate doesn't validate. Settings you leave out stay as they are in Honeybadger.
+
+Every change happens in place, except moving the check to another project, which replaces it.
+
+## Use a check you already have
+
+Like projects, uptime checks have no tags. Deploying a check named after one that already exists in the project fails with `OwnedBySomeoneElse` until you deploy once with `--adopt`. See [Adoption](/infrastructure-as-code/resource-lifecycle#adoption).

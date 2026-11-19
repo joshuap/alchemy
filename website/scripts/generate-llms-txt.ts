@@ -982,6 +982,23 @@ const SECTIONS: Section[] = [
     },
   },
   {
+    heading: "Honeybadger",
+    intro:
+      "Application monitoring as Stack resources — projects, ingestion keys, uptime checks, dashboards, source maps and deploys.",
+    pages: {
+      slugs: [
+        "honeybadger/index",
+        "honeybadger/what-is-honeybadger",
+        "honeybadger/setup",
+        "honeybadger/accounts-tokens-and-regions",
+        "honeybadger/projects-and-ingestion-keys",
+        "honeybadger/uptime-checks",
+        "honeybadger/dashboards",
+        "honeybadger/deploys-and-source-maps",
+      ],
+    },
+  },
+  {
     heading: "GitHub",
     intro:
       "Repos, secrets, variables, and repository event sources as Stack resources; the CI/CD guides live under Guides and each cloud's tutorial part 5.",

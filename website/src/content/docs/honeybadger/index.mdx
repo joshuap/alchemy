@@ -1,0 +1,62 @@
+---
+title: Honeybadger
+description: Application monitoring as resources — projects, ingestion keys, uptime checks and dashboards declared next to the app that reports to them.
+---
+
+import HubMap from "../../../components/HubMap.astro";
+
+Honeybadger is an application monitoring platform. It tracks errors, checks that your sites are up and that scheduled jobs check in, and collects your logs and application events so you can query and chart them.
+
+**New to Honeybadger?** Start with [What is Honeybadger?](/honeybadger/what-is-honeybadger).
+
+## A quick example
+
+A Project holds one app's errors and events. An IngestionKey is the key the app reports with, and it goes to the Worker as a secret:
+
+```typescript title="alchemy.run.ts"
+const project = yield* Honeybadger.Project("App", { name: "my-app", language: "js" });
+const key = yield* Honeybadger.IngestionKey("Worker", { projectId: project.projectId });
+
+const api = yield* Cloudflare.Worker("Api", {
+  main: "./src/worker.ts",
+  env: { HONEYBADGER_API_KEY: key.key },
+});
+```
+
+A Site checks the Worker's health endpoint every five minutes and alerts the project when it goes down:
+
+```typescript title="alchemy.run.ts"
+yield* Honeybadger.Site("Health", {
+  projectId: project.projectId,
+  name: "my-app health",
+  url: Output.interpolate`${api.url}/health`,
+  matchType: "success",
+  frequency: 5,
+});
+```
+
+A Dashboard charts the project's events:
+
+```typescript title="alchemy.run.ts"
+yield* Honeybadger.Dashboard("Overview", {
+  projectId: project.projectId,
+  title: "My app",
+  widgets: [
+    {
+      id: "requests",
+      type: "insights_vis",
+      config: { query: "stats count() by bin(1h)", streams: ["default"] },
+    },
+  ],
+});
+```
+
+## Where to start
+
+**Want to build?** Connect your account in [Setup](/honeybadger/setup), then declare a project and its key in [Projects and ingestion keys](/honeybadger/projects-and-ingestion-keys).
+
+**Looking for something specific?** Every section of these docs is listed below, and every resource is in the generated [API reference](/providers).
+
+## The docs
+
+<HubMap />

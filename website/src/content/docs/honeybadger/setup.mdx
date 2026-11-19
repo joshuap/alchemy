@@ -1,0 +1,64 @@
+---
+title: Setup
+description: Connect Alchemy to Honeybadger — install the package, add an API token to a profile, and set the CI variables.
+---
+
+import PackageManagers from "../../../components/PackageManagers.astro";
+
+You need:
+
+- [Node.js](https://nodejs.org) 24.11.1+ or [Bun](https://bun.sh)
+- A Honeybadger account. Sign up at [honeybadger.io](https://www.honeybadger.io).
+
+## Install
+
+<PackageManagers add="@alchemy.run/honeybadger" />
+
+Register the provider next to your cloud's:
+
+```typescript title="alchemy.run.ts"
+import * as Alchemy from "alchemy";
+import * as Cloudflare from "@alchemy.run/cloudflare";
+import * as Honeybadger from "@alchemy.run/honeybadger";
+import * as Effect from "effect/Effect";
+import * as Layer from "effect/Layer";
+
+export default Alchemy.Stack(
+  "MyApp",
+  {
+    providers: Layer.mergeAll(Cloudflare.providers(), Honeybadger.providers()),
+    state: Cloudflare.state(),
+  },
+  Effect.gen(function* () {
+    const project = yield* Honeybadger.Project("App", { name: "my-app" });
+    return { projectId: project.projectId };
+  }),
+);
+```
+
+## Connect a profile
+
+Alchemy deploys with a Honeybadger **API token**: a user API token from User settings, or an account API token from Account settings. Give it the scopes for the resources your Stack manages (see [API tokens](/honeybadger/accounts-tokens-and-regions#api-tokens)), then add it to a profile:
+
+<PackageManagers run="alchemy profile edit --add Honeybadger" />
+
+The token is entered interactively and saved under `~/.alchemy/credentials/<profile>/`. The prompt also asks for an API base URL and an ingest URL. Leave both empty for a US account. For an EU account, enter `https://eu-app.honeybadger.io/v3` as the API base URL; the ingest URL follows from it.
+
+See [Profiles](/environments/profiles) for how credentials are stored and switched.
+
+## In CI
+
+With `CI=true`, Alchemy skips the profile and reads the environment:
+
+| Variable | Value |
+| --- | --- |
+| `HONEYBADGER_API_TOKEN` | An API token, usually an account API token. Required. |
+| `HONEYBADGER_API_URL` | `https://eu-app.honeybadger.io/v3` for an EU account. Leave it unset for the US. |
+| `HONEYBADGER_INGEST_URL` | Where deploys and source maps go. Optional: derived from the API URL's region. |
+
+See [CI](/environments/ci).
+
+## Next steps
+
+- [Accounts, tokens and regions](/honeybadger/accounts-tokens-and-regions): which token does what.
+- [Projects and ingestion keys](/honeybadger/projects-and-ingestion-keys): declare a project and give your app its key.

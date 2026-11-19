@@ -107,6 +107,7 @@
     { "path": "../drizzle/tsconfig.json" },
     { "path": "../axiom/tsconfig.json" },
     { "path": "../convex/tsconfig.json" },
+    { "path": "../honeybadger/tsconfig.json" },
     { "path": "../rivet/tsconfig.json" },
     {
       "path": "../effect-cluster/tsconfig.json"

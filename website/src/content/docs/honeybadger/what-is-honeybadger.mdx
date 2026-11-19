@@ -1,0 +1,95 @@
+---
+title: What is Honeybadger?
+description: The concepts behind Honeybadger — accounts, projects, API tokens and API keys, regions, error tracking, uptime checks, logs and events, dashboards, deploys and source maps — and how @alchemy.run/honeybadger models each of them.
+---
+
+import Tree from "../../../components/diagrams/Tree.astro";
+
+Honeybadger watches your apps in production. Each app reports to a **project**: the errors it raises, and the logs and events it sends. Honeybadger also checks your app from outside, requesting its URLs on a schedule and alerting the project when they stop answering. Everything a project collects can be queried and charted on dashboards.
+
+Take one small app: a Worker that reports its errors to a project called `my-app`, with an uptime check on its health endpoint and a dashboard of its events. The Worker reports with the project's ingestion key. The uptime check requests the Worker's URL every five minutes. The project belongs to an account, and Alchemy deploys it with an API token for that account.
+
+<Tree
+  nodes={[
+    { id: "worker", label: "Api", type: "Worker", icon: "square-function" },
+    {
+      id: "account", label: "acme", type: "account", icon: "brand:honeybadger",
+    },
+    {
+      id: "project", label: "my-app", type: "project", parent: "account", tone: "accent", icon: "folder",
+      areas: ["key", "site", "dash"],
+      phoneAreas: ["dash dash", "key site"],
+    },
+    { id: "key", label: "worker", type: "ingestion key", parent: "project", icon: "key-round" },
+    { id: "site", label: "Health", type: "uptime check", parent: "project", icon: "activity" },
+    { id: "dash", label: "Overview", type: "dashboard", parent: "project", icon: "layout-dashboard" },
+  ]}
+  areas={["worker account"]}
+  phoneAreas={["account", "worker"]}
+  colGap={3}
+  links={[
+    { from: "worker", to: "key", label: "reports with" },
+    { from: "site", to: "worker", label: "checks", dashed: true },
+  ]}
+  caption="The project lives in an account. The Worker reports errors and events to it with an ingestion key, and the uptime check requests the Worker's URL from outside."
+/>
+
+## Accounts, tokens and regions
+
+An **account** holds your projects, your team and your bill. Two kinds of credential reach it. An **API token** calls Honeybadger's API with the scopes it was given, and is what Alchemy deploys with. A user API token acts as you, and an account API token acts as the account. A project's **API key**, also called an ingestion key, can only report to that one project, and is what your app ships with.
+
+Honeybadger runs in two **regions**, the US and the EU. An account lives in one of them, and its API has its own address there.
+
+See [Accounts, tokens and regions](/honeybadger/accounts-tokens-and-regions).
+
+## Projects
+
+A **project** is one application or service. Its errors, logs and events, uptime checks, check-ins and deploys all belong to it.
+
+```typescript title="alchemy.run.ts"
+const project = yield* Honeybadger.Project("App", { name: "my-app", language: "js" });
+```
+
+A project's history can't be recreated, so removing it from your Stack keeps it in Honeybadger.
+
+See [Projects and ingestion keys](/honeybadger/projects-and-ingestion-keys).
+
+## Errors
+
+Honeybadger groups the errors your app reports into **faults**, one per kind of error, so a thousand of the same crash are one fault with a thousand occurrences. A Honeybadger client library in your app reports them, with the project's API key.
+
+## Uptime checks
+
+An **uptime check** requests a URL on a schedule, from several locations around the world, and decides from the response whether the site is up. When it goes down, Honeybadger alerts the project, and again when it recovers.
+
+See [Uptime checks](/honeybadger/uptime-checks).
+
+## Check-ins
+
+A **check-in** watches a scheduled job, like a nightly backup. The job pings Honeybadger each time it runs, and Honeybadger alerts you when a ping doesn't arrive on time.
+
+## Logs and events
+
+Your app can also send **events**: structured records such as log lines, requests or anything else worth counting. Honeybadger stores them with the project, and you query them with **BadgerQL**, a query language. This one counts the project's events per hour:
+
+```text
+stats count() by bin(1h)
+```
+
+## Dashboards
+
+A **dashboard** is a grid of widgets. A widget charts a BadgerQL query, or shows the project's errors, uptime, check-ins, deploys or alarms.
+
+See [Dashboards](/honeybadger/dashboards).
+
+## Deploys and source maps
+
+A **deploy** marks the moment a new revision of your app went live, so you can see which errors started after it. **Source maps** let Honeybadger turn a minified JavaScript backtrace back into your original source. Both are sent with the project's API key.
+
+See [Deploys and source maps](/honeybadger/deploys-and-source-maps).
+
+## How @alchemy.run/honeybadger models these concepts
+
+Your API token picks the account, the API address in your profile picks the region, and `Honeybadger.providers()` deploys into it. Projects, ingestion keys, uptime checks and dashboards are resources in the same Stack as the Workers and Functions they watch. `Deploy` records a deploy once the app is live, and `SourceMaps` uploads a build's maps before it is. An ingestion key's value is an output you pass to your app as a secret.
+
+Next, connect your account in [Setup](/honeybadger/setup).

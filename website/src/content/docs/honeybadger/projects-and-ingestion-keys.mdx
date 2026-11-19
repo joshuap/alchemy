@@ -1,0 +1,109 @@
+---
+title: Projects and ingestion keys
+description: Declare a Honeybadger project, keep or delete it with your Stack, look up one you already have, and give each app its own ingestion key.
+---
+
+import PackageManagers from "../../../components/PackageManagers.astro";
+import Tree from "../../../components/diagrams/Tree.astro";
+
+A **project** is one application or service on Honeybadger. The errors it reports, the events it sends, its uptime checks, check-ins and deploys all belong to the project. An **ingestion key** is a key your app reports to the project with. A project can have several, one for each app or environment that reports to it.
+
+## Declare a project
+
+```typescript title="alchemy.run.ts"
+const project = yield* Honeybadger.Project("App", {
+  name: "my-app",
+  language: "js",
+  resolveErrorsOnDeploy: true,
+});
+```
+
+`language` tells Honeybadger how to format backtraces. `resolveErrorsOnDeploy` resolves every open error each time a deploy is recorded. Settings you leave out stay as they are in Honeybadger, so a teammate can change them there without your next deploy undoing it.
+
+Leave out `name` and Alchemy generates one from the Stack, the resource's ID and the stage, so each stage gets its own project. Renaming a project happens in place.
+
+## Keep or delete a project
+
+A project holds history you can't recreate. Removing it from your Stack, or running `alchemy destroy`, keeps the project in Honeybadger and only stops managing it. Pipe it through `RemovalPolicy.destroy()` to delete it with the Stack, as you might for a preview stage:
+
+```typescript title="src/monitoring.ts"
+import * as Honeybadger from "@alchemy.run/honeybadger";
+import * as RemovalPolicy from "alchemy/RemovalPolicy";
+
+export const Preview = Honeybadger.Project("Preview", { language: "js" }).pipe(
+  RemovalPolicy.destroy(),
+);
+```
+
+See [Removal policy](/infrastructure-as-code/resource-lifecycle#removal-policy).
+
+## Use a project you already have
+
+Honeybadger projects have no tags, so Alchemy can't tell a project it made from one with the same name made in the UI. Deploying a project named after one that already exists fails with `OwnedBySomeoneElse`. To take it over and manage it from then on, deploy once with `--adopt`:
+
+<PackageManagers run="alchemy deploy --adopt" />
+
+To use the project without managing it, look it up by name instead. A lookup only reads the project: Alchemy never changes or deletes it.
+
+```typescript title="alchemy.run.ts"
+const project = Honeybadger.Project.lookup({ name: "my-app" });
+```
+
+See [Adoption](/infrastructure-as-code/resource-lifecycle#adoption) and [Look up a resource Alchemy doesn't manage](/infrastructure-as-code/references#look-up-a-resource-alchemy-doesnt-manage).
+
+## Give each app its own key
+
+Each app that reports to the project gets its own ingestion key, so you can replace one app's key without touching the others:
+
+<Tree
+  nodes={[
+    { id: "api", label: "Api", type: "Worker", icon: "square-function" },
+    { id: "jobs", label: "Jobs", type: "Worker", icon: "square-function" },
+    {
+      id: "project", label: "my-app", type: "project", tone: "accent", icon: "folder",
+      areas: ["apikey", "jobskey"],
+    },
+    { id: "apikey", label: "api", type: "ingestion key", parent: "project", icon: "key-round" },
+    { id: "jobskey", label: "jobs", type: "ingestion key", parent: "project", icon: "key-round" },
+  ]}
+  areas={["api project", "jobs project"]}
+  phoneAreas={["project project", "api jobs"]}
+  colGap={5}
+  links={[
+    { from: "api", to: "apikey", label: "reports with" },
+    { from: "jobs", to: "jobskey", label: "reports with" },
+  ]}
+  caption="Both Workers report to my-app, each with its own key. Deleting the jobs key stops only the Jobs Worker from reporting."
+/>
+
+```typescript title="alchemy.run.ts"
+const apiKey = yield* Honeybadger.IngestionKey("Api", {
+  projectId: project.projectId,
+  label: "api",
+});
+const jobsKey = yield* Honeybadger.IngestionKey("Jobs", {
+  projectId: project.projectId,
+  label: "jobs",
+});
+```
+
+`label` is the name the key shows in Honeybadger. Changing it relabels the key in place, and moving the key to another project replaces it.
+
+## Pass the key to your app
+
+The key's value is an output, kept `Redacted` in state. Pass it to the app's environment and it deploys as a secret:
+
+```typescript title="alchemy.run.ts"
+yield* Cloudflare.Worker("Api", {
+  main: "./src/worker.ts",
+  env: { HONEYBADGER_API_KEY: apiKey.key },
+});
+```
+
+Your Honeybadger client library reads it as its API key. See [Secrets & env](/cloudflare/security/secrets-env).
+
+## When a key can't be deleted
+
+Honeybadger won't delete a project's last key. If the key you remove from your Stack is the last one the project has in Honeybadger, the deploy succeeds, prints a note, and leaves the key in place. It keeps working until you delete the project or remove the key in Honeybadger.
+
+Keys have no name of their own for Alchemy to find them by. If a deploy is interrupted after a key is created but before Alchemy saves it, the next deploy creates another, and the first stays in the project until you remove it.

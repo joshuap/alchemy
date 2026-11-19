@@ -1187,6 +1187,19 @@ Observability as Stack resources — datasets, monitors, notifiers. The exporter
 - [Dashboards as code](https://alchemy.run/axiom/guides/dashboards) — Declare Axiom dashboards — charts, layout, filter bars, saved views, and deploy annotations — as alchemy resources next to the services they observe.
 - [Deploy markers & annotations](https://alchemy.run/axiom/guides/annotations) — Overlay deploys, incidents, and flag flips as vertical markers on Axiom charts — point or range annotations, scoped to one or more datasets, declared as alchemy resources.
 
+## Honeybadger
+
+Application monitoring as Stack resources — projects, ingestion keys, uptime checks, dashboards, source maps and deploys.
+
+- [Honeybadger](https://alchemy.run/honeybadger) — Application monitoring as resources — projects, ingestion keys, uptime checks and dashboards declared next to the app that reports to them.
+- [What is Honeybadger?](https://alchemy.run/honeybadger/what-is-honeybadger) — The concepts behind Honeybadger — accounts, projects, API tokens and API keys, regions, error tracking, uptime checks, logs and events, dashboards, deploys and source maps — and how @alchemy.run/honeybadger models each of them.
+- [Setup](https://alchemy.run/honeybadger/setup) — Connect Alchemy to Honeybadger — install the package, add an API token to a profile, and set the CI variables.
+- [Accounts, tokens and regions](https://alchemy.run/honeybadger/accounts-tokens-and-regions) — How a Honeybadger account holds your projects, which API token Alchemy deploys with, how each app reports with its project's own key, and how to deploy to an EU account.
+- [Projects and ingestion keys](https://alchemy.run/honeybadger/projects-and-ingestion-keys) — Declare a Honeybadger project, keep or delete it with your Stack, look up one you already have, and give each app its own ingestion key.
+- [Uptime checks](https://alchemy.run/honeybadger/uptime-checks) — Have Honeybadger request your app's URLs on a schedule from locations around the world, decide from each response whether it's up, and alert the project when it goes down.
+- [Dashboards](https://alchemy.run/honeybadger/dashboards) — Declare Honeybadger dashboards as code — query charts and widgets for errors, uptime, check-ins, deploys and alarms, laid out on a grid, with every stage getting the same dashboard.
+- [Deploys and source maps](https://alchemy.run/honeybadger/deploys-and-source-maps) — Upload a build's source maps before it goes live and record the deploy once it has, so Honeybadger shows original source in backtraces and marks which errors started with a release.
+
 ## GitHub
 
 Repos, secrets, variables, and repository event sources as Stack resources; the CI/CD guides live under Guides and each cloud's tutorial part 5.
